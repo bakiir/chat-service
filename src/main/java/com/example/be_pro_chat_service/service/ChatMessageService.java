@@ -14,12 +14,20 @@ public class ChatMessageService {
 
     private final ChatMessageRepo chatMessageRepo;
 
-    public void saveMessage(String sender, String receiver, String content){
+    public void saveMessage(String sender, String content, Boolean isGroup, Long groupId, String receiver){
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setSender(sender);
-        chatMessage.setReceiver(receiver);
         chatMessage.setTimestamp(LocalDateTime.now());
         chatMessage.setContent(content);
+
+        if (isGroup){
+            chatMessage.setGroupId(groupId);
+            chatMessage.setIsGroup(true);
+        }else {
+            chatMessage.setIsGroup(false);
+            chatMessage.setReceiver(receiver);
+        };
+
         chatMessageRepo.save(chatMessage);
     }
 }

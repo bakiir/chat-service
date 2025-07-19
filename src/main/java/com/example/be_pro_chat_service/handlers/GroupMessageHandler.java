@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GroupMessageHandler extends AbstractWebSocketHandler {
     private final Map<String, UserSession> sessions = new ConcurrentHashMap<>();
     private final GroupService groupService;
+    private final ChatMessageService chatMessageService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -43,7 +44,7 @@ public class GroupMessageHandler extends AbstractWebSocketHandler {
             }
             if (username != null) {
                 sessions.put(session.getId(), new UserSession(session, username));
-                joinGroup(username, 1L);
+                joinGroup(session, username, 1L);
             }
         }
     }
@@ -55,28 +56,59 @@ public class GroupMessageHandler extends AbstractWebSocketHandler {
         String username = sessions.get(session.getId()).getUsername();
 
         switch (groupMessage.getType()){
-            case "JOIN_GROUP" -> joinGroup(username, groupMessage.getGroup());
-            case "GROUP_MESSAGE" -> sendToGroup(groupMessage.getGroup(), username + ": " + groupMessage.getContent());
+            case "JOIN_GROUP" -> joinGroup(session, username, groupMessage.getGroup());
+            case "GROUP_MESSAGE" -> sendToGroup(session, groupMessage.getGroup(), username + ": " + groupMessage.getContent());
         }
     }
 
-    private  void sendToGroup(Long groupId, String message){
-        Group group =  groupService.getGroupByIdWithUsers(groupId);
-        List<String> users = group.getUsers();
-        for(UserSession userSession: sessions.values()){
-            if (users.contains(userSession.getUsername())){
-                try{
-                    userSession.getSession().sendMessage(new TextMessage(message));
-                }catch (IOException e){
-                    log.warn("Failed to send message to user {}", userSession.getUsername());
+    private void sendToGroup(WebSocketSession senderSession, Long groupId, String message) {
+        String sender = sessions.get(senderSession.getId()).getUsername();
+        Group group = groupService.getGroupByIdWithUsers(groupId);
 
+        // Сохраняем в БД
+        chatMessageService.saveMessage(sender, message, true, groupId, null);
+
+        List<String> users = group.getUsers();
+        for (UserSession userSession : sessions.values()) {
+            if (users.contains(userSession.getUsername())) {
+                try {
+                    if (userSession.getSession().isOpen()) {
+                        userSession.getSession().sendMessage(new TextMessage(message));
+                    } else {
+                        log.warn("Cannot send to {}: session closed", userSession.getUsername());
+                    }
+                } catch (IOException e) {
+                    log.warn("Failed to send message to {}", userSession.getUsername(), e);
                 }
             }
         }
     }
 
-    private void joinGroup(String username, Long group){
-        groupService.addUserToGroup(group, username);
+    private void joinGroup(WebSocketSession senderSession,String username, Long groupId){
+        Group group = groupService.getGroupByIdWithUsers(groupId);
+
+        groupService.addUserToGroup(group.getId(), username);
+        String sender = sessions.get(senderSession.getId()).getUsername();
+
+        String message = ("User: " + sender + " joined to the group");
+        // Сохраняем в БД
+        chatMessageService.saveMessage(sender, message, true, groupId, null);
+
+        List<String> users = group.getUsers();
+        for (UserSession userSession : sessions.values()) {
+            if (users.contains(userSession.getUsername())) {
+                try {
+                    if (userSession.getSession().isOpen()) {
+                        userSession.getSession().sendMessage(new TextMessage(message));
+                    } else {
+                        log.warn("Cannot send to {}: session closed", userSession.getUsername());
+                    }
+                } catch (IOException e) {
+                    log.warn("Failed to send message to {}", userSession.getUsername(), e);
+                }
+            }
+        }
+
         log.info("user {} joined to group {}", username, group);
     }
 

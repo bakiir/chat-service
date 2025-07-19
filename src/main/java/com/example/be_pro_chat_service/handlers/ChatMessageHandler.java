@@ -63,13 +63,13 @@ public class ChatMessageHandler extends AbstractWebSocketHandler {
 
         String sender = sessions.get(session.getId()).getUsername();
         String receiver = message.getReceiver();
-        chatMessageService.saveMessage(sender, receiver, message.getContent());
+        chatMessageService.saveMessage(sender, message.getContent(), false, null, receiver);
         String sessionId = usernameToSessionId.get(receiver);
         if(sessionId!=null){
             UserSession userSession = sessions.get(sessionId);
             if (userSession!=null){
                 try {
-                    userSession.getSession().sendMessage(new TextMessage(message.getContent()));
+                    userSession.getSession().sendMessage(new TextMessage(userSession.getUsername() +": "+message.getContent()));
                 }catch (Exception e){
                     System.err.println("Error on sending chatMessage: "+ e.getMessage());
                 }

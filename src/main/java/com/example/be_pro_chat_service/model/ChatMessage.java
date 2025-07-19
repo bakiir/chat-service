@@ -21,9 +21,14 @@ public class ChatMessage {
     private Long id;
 
     private String sender;
-    private String receiver;
     private String content;
     private LocalDateTime timestamp;
+
+    private Boolean isGroup;
+
+    private Long groupId;
+    private String receiver;
+
 
 
 
