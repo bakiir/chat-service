@@ -29,26 +29,29 @@ public class GroupMessageHandler extends AbstractWebSocketHandler {
     private final ObjectMapper objectMapper;
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        String username = null;
-        String query = session.getUri().getQuery();
-        if(query != null){
-            String []queryParams = query.split("&");
-            for (String param : queryParams){
-                String []keyValue =  param.split("=");
-                if ("username".equals(keyValue[0]) && keyValue.length > 1) {
-                    username = keyValue[1];
-                    break;
-                }
+    public void afterConnectionEstablished(WebSocketSession session){
+        String username = extractUsername(session);
 
-            }
-            if (username != null) {
-                sessions.put(session.getId(), new UserSession(session, username));
-                joinGroup(session, username, 1L);
-            }
+        if (username != null) {
+            sessions.put(session.getId(), new UserSession(session, username));
+            joinGroup(session, username, 1L);
         }
     }
 
+
+
+    private String extractUsername(WebSocketSession session) {
+        String query = session.getUri().getQuery();
+        if (query != null) {
+            for (String param : query.split("&")) {
+                String[] keyValue = param.split("=");
+                if ("username".equals(keyValue[0]) && keyValue.length > 1) {
+                    return keyValue[1];
+                }
+            }
+        }
+        return null;
+    }
 
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
