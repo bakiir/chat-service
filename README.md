@@ -8,6 +8,7 @@
 
 - Java 17+
 - Spring Boot
+- Redis
 - WebSocket (STOMP)
 - Spring Data JPA (Hibernate)
 - Gradle
