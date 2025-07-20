@@ -18,22 +18,32 @@ H2 / PostgreSQL (по умолчанию H2)
 REST API
 
 🧩 Структура проекта
-bash
-Копировать
-Редактировать
 src
+
 └── main
+
     ├── java/com/example/be_pro_chat_service
+    
     │   ├── config/                 # WebSocket конфигурация
+    
     │   ├── controllers/            # REST-контроллеры
+    
     │   ├── dto/                    # DTO классы
+    
     │   ├── handlers/               # Обработчики WebSocket-сообщений
+    
     │   ├── model/                  # Модели JPA
+    
     │   ├── repo/                   # Репозитории Spring Data JPA
+    
     │   ├── service/                # Сервисы бизнес-логики
+    
     │   └── session/                # Управление сессиями пользователей
+    
     └── resources/
+    
         └── application.properties  # Настройки приложения
+        
 🔧 Как запустить
 ✅ Предварительные требования
 Java 17+
